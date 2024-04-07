@@ -11,7 +11,7 @@ import numpy as np
 class Probe:
     def __init__(self, model_name='logistic'):
         if model_name == 'lr':
-            self.model = LogisticRegression()
+            self.model = LogisticRegression(max_iter=1000)
         elif model_name == 'tree':
             self.model = DecisionTreeClassifier()
         elif model_name == 'mlp':
