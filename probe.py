@@ -3,6 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report
+from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,8 @@ class Probe:
             self.model = DecisionTreeClassifier()
         elif model_name == 'mlp':
             self.model = MLPClassifier((128, 64))
+        elif model_name == 'svm':
+            self.model = SVC(kernel='linear')
         else:
             raise ValueError('Invalid model_name')
 
@@ -28,13 +31,15 @@ class Probe:
         y_pred = self.predict(X)
         print(classification_report(y, y_pred))
     
-    def probe(self, X_train, y_train, X_val, y_val):
+    def probe(self, X_train, y_train, X_val, y_val, pca=False):
+        if pca:
+            pca = PCA(n_components=2)
+            X_train = pca.fit_transform(X_train)
+            X_val = pca.transform(X_val)
         self.fit(X_train, y_train)
         self.evaluate(X_val, y_val)
     
     def plot_decision_boundary(self, X, y):
-        pca = PCA(n_components=2)
-        X = pca.fit_transform(X)
         h = .02  # step size in the mesh
         x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
         y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
@@ -47,3 +52,11 @@ class Probe:
         plt.xlabel('Principal Component 1')
         plt.ylabel('Principal Component 2')
         plt.title('Decision Boundary')
+
+def probe_all_models(X_train, y_train, X_val, y_val, pca=False):
+    models = ['lr', 'tree', 'mlp', 'svm']
+    for model in models:
+        print(f'Probing {model}')
+        probe = Probe(model)
+        probe.probe(X_train, y_train, X_val, y_val, pca)
+        print('|==============================|')
