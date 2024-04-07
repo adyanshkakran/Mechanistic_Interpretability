@@ -15,7 +15,7 @@ class Probe:
         elif model_name == 'tree':
             self.model = DecisionTreeClassifier()
         elif model_name == 'mlp':
-            self.model = MLPClassifier((128, 64))
+            self.model = MLPClassifier((64,))
         elif model_name == 'svm':
             self.model = SVC(kernel='linear')
         else:
@@ -30,6 +30,7 @@ class Probe:
     def evaluate(self, X, y):
         y_pred = self.predict(X)
         print(classification_report(y, y_pred))
+        return classification_report(y, y_pred)
     
     def probe(self, X_train, y_train, X_val, y_val, pca=False):
         if pca:
@@ -37,7 +38,7 @@ class Probe:
             X_train = pca.fit_transform(X_train)
             X_val = pca.transform(X_val)
         self.fit(X_train, y_train)
-        self.evaluate(X_val, y_val)
+        return self.evaluate(X_val, y_val)
     
     def plot_decision_boundary(self, X, y):
         h = .02  # step size in the mesh
@@ -54,9 +55,15 @@ class Probe:
         plt.title('Decision Boundary')
 
 def probe_all_models(X_train, y_train, X_val, y_val, pca=False):
+    res = []
     models = ['lr', 'tree', 'mlp', 'svm']
     for model in models:
         print(f'Probing {model}')
         probe = Probe(model)
-        probe.probe(X_train, y_train, X_val, y_val, pca)
+        cr = probe.probe(X_train, y_train, X_val, y_val, pca)
+        res.append({
+            'model': model,
+            'cr': cr
+        })
         print('|==============================|')
+    return res

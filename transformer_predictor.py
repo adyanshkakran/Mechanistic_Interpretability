@@ -302,9 +302,9 @@ class TransformerPredictor(L.LightningModule):
         return self.outbeddings
 
 def train(model, trainer, train_loader, val_loader):
-    trainer.fit(model, train_loader, val_loader)
-    return model, trainer, train_outbeddings, val_outbeddings
+    res=trainer.fit(model, train_loader, val_loader)
+    return res, model, trainer, train_outbeddings, val_outbeddings
 
 def test(model, trainer, test_loader):
-    trainer.test(model, test_loader)
-    return test_outbeddings
+    res = trainer.test(model, test_loader)
+    return res, test_outbeddings
