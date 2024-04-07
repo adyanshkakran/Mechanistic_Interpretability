@@ -3,6 +3,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import numpy as np
 
 class Probe:
     def __init__(self, model_name='logistic'):
@@ -28,3 +31,19 @@ class Probe:
     def probe(self, X_train, y_train, X_val, y_val):
         self.fit(X_train, y_train)
         self.evaluate(X_val, y_val)
+    
+    def plot_decision_boundary(self, X, y):
+        pca = PCA(n_components=2)
+        X = pca.fit_transform(X)
+        h = .02  # step size in the mesh
+        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                            np.arange(y_min, y_max, h))
+        Z = self.model.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        plt.contourf(xx, yy, Z, alpha=0.3)
+        plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors='k', cmap=plt.cm.Paired)
+        plt.xlabel('Principal Component 1')
+        plt.ylabel('Principal Component 2')
+        plt.title('Decision Boundary')
