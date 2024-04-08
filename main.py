@@ -60,6 +60,8 @@ if __name__ == '__main__':
     trainer = L.Trainer(max_epochs=args.transformer_epochs)
 
     res, model, trainer, train_outbeddings, val_outbeddings = train(model, trainer, train_loader, val_loader)
+
+    res, _ = test(model, trainer, train_loader)
     logger.log(f'Training results: {res}')
     
     res, test_outbeddings = test(model, trainer, test_loader)

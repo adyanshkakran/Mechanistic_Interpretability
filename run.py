@@ -31,5 +31,7 @@ if __name__ == '__main__':
     layers = [1, 2]
     num_heads = [2, 4]
     
-    args = Args()
-    run(args)
+    for layer in layers:
+        for head in num_heads:
+            args = Args(num_layers=layer, num_heads=head)
+            run(args)

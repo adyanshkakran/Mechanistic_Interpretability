@@ -81,6 +81,10 @@ def get_probe_loaders(train_data, val_data, test_data, batch_size=64):
     
     return train_loader, val_loader, test_loader
 
+def get_stack_depths(data, stack_depths=[5, 15]):
+    return torch.where(torch.isin(data, torch.tensor(stack_depths)))[0]
+
+
 if __name__ == '__main__':
     data = load_data('brackets.csv')
     print(data[0])
