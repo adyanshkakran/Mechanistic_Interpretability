@@ -57,7 +57,7 @@ if __name__ == '__main__':
         warmup=args.warmup,
         max_iters=args.max_iters,
     )
-    trainer = L.Trainer(max_epochs=args.transformer_epochs)
+    trainer = L.Trainer(max_epochs=args.transformer_epochs, devices=1)
 
     res, model, trainer, train_outbeddings, val_outbeddings = train(model, trainer, train_loader, val_loader)
 

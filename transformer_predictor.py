@@ -163,9 +163,9 @@ class TransformerEncoder(nn.Module):
             x = layer(x)
         return attention_maps
 
-train_outbeddings = []
-val_outbeddings = []
-test_outbeddings = []
+# train_outbeddings = []
+# val_outbeddings = []
+# test_outbeddings = []
 
 class TransformerPredictor(L.LightningModule):
     def __init__(
@@ -199,6 +199,9 @@ class TransformerPredictor(L.LightningModule):
         self.save_hyperparameters()
         self._create_model()
         self.accuracy = torchmetrics.classification.Accuracy(task="binary")
+        self.train_outbeddings = []
+        self.val_outbeddings = []
+        self.test_outbeddings = []
 
     def _create_model(self):
         # Input dim -> Model dim
@@ -272,39 +275,42 @@ class TransformerPredictor(L.LightningModule):
         batch['x'] = batch['x'].float()
         y_hat, outbeds = self(batch)
         y_hat = y_hat[torch.arange(y_hat.size(0)), eos]
-        outbeds = outbeds[torch.arange(outbeds.size(0)), eos]
+        outbeds = outbeds[torch.arange(outbeds.size(0)), eos].cpu()
         loss = F.cross_entropy(y_hat, y)
         accuracy = self.accuracy(F.softmax(y_hat), y)
         return loss, accuracy, outbeds
 
     def training_step(self, batch, batch_idx):
         loss, accuracy, outbeds = self.calc_loss(batch, 'train')
-        train_outbeddings.append([outbeds.cpu(), batch['sd']])
+        self.train_outbeddings.append([outbeds, batch['sd']])
         self.log('train_loss', loss)
         self.log('train_acc', accuracy, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss, accuracy, outbeds = self.calc_loss(batch, 'val')
-        val_outbeddings.append([outbeds.cpu(), batch['sd']])
+        self.val_outbeddings.append([outbeds, batch['sd']])
         self.log('val_loss', loss)
         self.log('val_acc', accuracy, on_epoch=True)
         return loss
 
     def test_step(self, batch, batch_idx):
+        global test_outbeddings
         loss, accuracy, outbeds = self.calc_loss(batch, 'test')
-        test_outbeddings.append([outbeds.cpu(), batch['sd']])
+        self.test_outbeddings.append([outbeds, batch['sd']])
         self.log('test_loss', loss)
         self.log('test_acc', accuracy, on_epoch=True)
         return loss
     
     def get_outbeddings(self):
-        return self.outbeddings
+        return self.train_outbeddings, self.val_outbeddings, self.test_outbeddings
 
 def train(model, trainer, train_loader, val_loader):
     res=trainer.fit(model, train_loader, val_loader)
+    train_outbeddings, val_outbeddings, _ = model.get_outbeddings()
     return res, model, trainer, train_outbeddings, val_outbeddings
 
-def test(model, trainer, test_loader):
+def test(model, trainer, test_loader, type='test'):
     res = trainer.test(model, test_loader)
+    _, _, test_outbeddings = model.get_outbeddings()
     return res, test_outbeddings

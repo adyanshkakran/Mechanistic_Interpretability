@@ -28,8 +28,11 @@ class Args:
         self.stack_depths = stack_depths
 
 if __name__ == '__main__':
-    layers = [1, 2]
-    num_heads = [2, 4]
+    # layers = [1, 2]
+    # num_heads = [2, 4]
+    
+    layers = [1]
+    num_heads = [4]
     
     for layer in layers:
         for head in num_heads:
