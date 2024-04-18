@@ -7,7 +7,7 @@ Eval number 3:
 4. To test this hypothesis, we generated a dataset with unbalanced strings of count 0 and tested it on the previously trained model -> 0% acc -> Then we trained on the this new dataset as well and saw that the model could still not solve the problem, but it learnt an additional pattern which is that any string starting with a closing bracket is unbalanced. This further supported our hypothesis as it was not able to learn the unbalanced strings with count 0. It is only failing on the case where counting fails and the stack succeeds.
 
 DATA NEEDED:
-1.  SCALING DATA VERY LARGE
+1. SCALING DATA VERY LARGE
 2. NORMAL TRAINING DATA WITH ALL COUNTS FOR FAIRNESS
 TESTING DATA WITH LOW COUNTS -> SHOULD GET LOW ACC
 TESTING DATA WITH HIGH COUNTS -> SHOULD GET HIGH ACC
@@ -15,3 +15,12 @@ TESTING DATA WITH HIGH COUNTS -> SHOULD GET HIGH ACC
 Next Steps:
 1. Setting up Mechanistic Interpretability to find where the model is using counts.
 2. We will be looking at the attention weights, the embeddings given as outputs of the transformer and the logits given as the final output by the MLP.
+
+NEW DATA:
+1. Unbalanced strings with count 0 - 50 (100 for each)
+2. 0 count starting with opening/closing bracket
+
+plot:
+1. Attention masks
+2. Transformer outbeddings
+3. MLP logits

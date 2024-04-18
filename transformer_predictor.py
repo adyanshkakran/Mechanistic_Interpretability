@@ -295,7 +295,6 @@ class TransformerPredictor(L.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        global test_outbeddings
         loss, accuracy, outbeds = self.calc_loss(batch, 'test')
         self.test_outbeddings.append([outbeds, batch['sd']])
         self.log('test_loss', loss)
