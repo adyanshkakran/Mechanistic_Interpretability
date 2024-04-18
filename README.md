@@ -17,7 +17,7 @@ Next Steps:
 2. We will be looking at the attention weights, the embeddings given as outputs of the transformer and the logits given as the final output by the MLP.
 
 NEW DATA:
-1. Unbalanced strings with count 0 - 50 (100 for each)
+1. Unbalanced strings with count 0 - 100 (100 for each even number)
 2. 0 count starting with opening/closing bracket
 
 plot:
