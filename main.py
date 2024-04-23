@@ -36,6 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_iters', type=int, default=1000)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--transformer_epochs', type=int, default=10)
+    parser.add_argument('--data-path', type=str, default='brackets.csv')
     parser.add_argument('--stack_depths', type=parse_list, default=[5, 15])
 
     args = parser.parse_args()
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     logger = Logger()
     logger.log(f'Arguments: {args}')
     
-    dataset = load_data('brackets.csv')
+    dataset = load_data(args.data_path)
 
     train_loader, val_loader, test_loader = get_loaders(dataset, batch_size=args.batch_size)
 
