@@ -12,7 +12,7 @@ def run(args):
         '--max_iters', str(args.max_iters),
         '--batch_size', str(args.batch_size),
         '--transformer_epochs', str(args.transformer_epochs),
-        '--stack_depths', ','.join(map(str, args.stack_depths))
+        # '--stack_depths', ','.join(map(str, args.stack_depths))
     ])
 
 class Args:
@@ -25,7 +25,7 @@ class Args:
         self.max_iters = max_iters
         self.batch_size = batch_size
         self.transformer_epochs = transformer_epochs
-        self.stack_depths = stack_depths
+        # self.stack_depths = stack_depths
 
 if __name__ == '__main__':
     # layers = [1, 2]

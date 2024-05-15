@@ -43,7 +43,7 @@ def scaled_dot_product(q, k, v, mask=None):
         attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
     attention = F.softmax(attn_logits, dim=-1)
     values = torch.matmul(attention, v)
-    return values, attention
+    return values, attention, attn_logits
 
 class CosineWarmupScheduler(optim.lr_scheduler._LRScheduler):
     def __init__(self, optimizer, warmup, max_iters):
@@ -94,7 +94,7 @@ class MultiheadAttention(nn.Module):
         q, k, v = qkv.chunk(3, dim=-1)
 
         # Determine value outputs
-        values, attention = scaled_dot_product(q, k, v, mask=mask)
+        values, attention, logits = scaled_dot_product(q, k, v, mask=mask)
         values = values.permute(0, 2, 1, 3)  # [Batch, SeqLen, Head, Dims]
         values = values.reshape(batch_size, seq_length, embed_dim)
         o = self.o_proj(values)
@@ -180,6 +180,7 @@ class TransformerPredictor(L.LightningModule):
         max_iters,
         dropout=0.0,
         input_dropout=0.0,
+        attn_maps=[]
     ):
         """TransformerPredictor.
 
@@ -202,6 +203,7 @@ class TransformerPredictor(L.LightningModule):
         self.train_outbeddings = []
         self.val_outbeddings = []
         self.test_outbeddings = []
+        self.logits = []
 
     def _create_model(self):
         # Input dim -> Model dim
@@ -249,7 +251,7 @@ class TransformerPredictor(L.LightningModule):
 
         Input arguments same as the forward pass.
         """
-        x = data['x']
+        x = data['x'].float()
         x = self.input_net(x)
         if add_positional_encoding:
             x = self.positional_encoding(x)
@@ -278,27 +280,28 @@ class TransformerPredictor(L.LightningModule):
         outbeds = outbeds[torch.arange(outbeds.size(0)), eos].cpu()
         loss = F.cross_entropy(y_hat, y)
         accuracy = self.accuracy(F.softmax(y_hat), y)
-        return loss, accuracy, outbeds
+        return loss, accuracy, outbeds, y_hat
 
     def training_step(self, batch, batch_idx):
-        loss, accuracy, outbeds = self.calc_loss(batch, 'train')
+        loss, accuracy, outbeds, _ = self.calc_loss(batch, 'train')
         self.train_outbeddings.append([outbeds, batch['sd']])
         self.log('train_loss', loss)
         self.log('train_acc', accuracy, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss, accuracy, outbeds = self.calc_loss(batch, 'val')
+        loss, accuracy, outbeds, _ = self.calc_loss(batch, 'val')
         self.val_outbeddings.append([outbeds, batch['sd']])
         self.log('val_loss', loss)
         self.log('val_acc', accuracy, on_epoch=True)
         return loss
 
     def test_step(self, batch, batch_idx):
-        loss, accuracy, outbeds = self.calc_loss(batch, 'test')
+        loss, accuracy, outbeds, logits = self.calc_loss(batch, 'test')
         self.test_outbeddings.append([outbeds, batch['sd']])
         self.log('test_loss', loss)
         self.log('test_acc', accuracy, on_epoch=True)
+        self.logits.append(logits)
         return loss
     
     def get_outbeddings(self):
@@ -309,7 +312,14 @@ def train(model, trainer, train_loader, val_loader):
     train_outbeddings, val_outbeddings, _ = model.get_outbeddings()
     return res, model, trainer, train_outbeddings, val_outbeddings
 
-def test(model, trainer, test_loader, type='test'):
+def test(model, trainer, test_loader, type='test', attn=0):
     res = trainer.test(model, test_loader)
     _, _, test_outbeddings = model.get_outbeddings()
-    return res, test_outbeddings
+    if attn == 1:
+        maps = []
+        for data in test_loader:
+            map = model.get_attention_maps(data)
+            maps.append(map[0].cpu().detach().numpy())
+        return res, test_outbeddings, maps, model.logits
+    else:
+        return res, test_outbeddings, model.logits
