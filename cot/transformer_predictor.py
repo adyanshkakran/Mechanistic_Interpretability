@@ -241,7 +241,17 @@ class TransformerPredictor(L.LightningModule):
         x = self.input_net(x)
         if add_positional_encoding:
             x = self.positional_encoding(x)
-        outbedding = self.transformer(x, mask=mask)
+        
+        for _ in range(len(x[0]) - 2):
+            outbedding = self.transformer(x, mask=mask)
+            # only take the last element in the sequence
+            outbedding = outbedding[:, -1, :]
+            preds = torch.argmax(outbedding, dim=1)
+            if torch.all(preds == 2):
+                break
+            # append outbedding to x
+            x = torch.cat([x, outbedding], dim=1)
+        
         x = self.output_net(outbedding)
         return x
 
@@ -270,26 +280,27 @@ class TransformerPredictor(L.LightningModule):
     def optimizer_step(self, *args, **kwargs):
         super().optimizer_step(*args, **kwargs)
         self.lr_scheduler.step()  # Step per iteration
-    
-    # Checks whether what the LLM predicted was correct or not    
-    def validate(self, input, output):
-        pass
         
     def calc_loss(self, batch, mode='train'):
         x, y = batch['x'], batch['y'].float()
         eos = batch['eos']
-        batch['x'] = batch['x'].float()
         
-        # Generate the whole string here using some sort of while loop, while updating the input each time
-        # When you see all eos tokens then stop
-        # Generate actual answers for each string in the batch
-        # Calculate loss based on the difference between these two
-        # Use the loss to update the model
-        y_hat = self(batch)
+        for _ in range(len(x[0]) - 2):
+            y_hat = self(batch)
+            # only take the last element in the sequence
+            y_hat = y_hat[:, -1, :]
+            print(y_hat.shape)
+            preds = torch.argmax(y_hat, dim=2)
+            if torch.all(preds == 2):
+                break
+            # append y_hat to batch['x']
+            batch['x'] = torch.cat([batch['x'], y_hat], dim=1)
+            print(batch['x'].shape)
         
-        y_hat = y_hat[torch.arange(y_hat.size(0)), eos]
-        # outbeds = outbeds[torch.arange(outbeds.size(0)), eos].cpu()
+        # take the elements after the eos token in the sequence
+
         
+                
         loss = F.cross_entropy(y_hat, y)
         accuracy = self.accuracy(F.softmax(y_hat), y)
         return loss, accuracy
@@ -321,17 +332,17 @@ class TransformerPredictor(L.LightningModule):
 
 def train(model, trainer, train_loader, val_loader):
     res=trainer.fit(model, train_loader, val_loader)
-    train_outbeddings, val_outbeddings, _ = model.get_outbeddings()
-    return res, model, trainer, train_outbeddings, val_outbeddings
+    # train_outbeddings, val_outbeddings, _ = model.get_outbeddings()
+    return res, model, trainer
 
 def test(model, trainer, test_loader, type='test', attn=0):
     res = trainer.test(model, test_loader)
-    _, _, test_outbeddings = model.get_outbeddings()
-    if attn == 1:
-        maps = []
-        for data in test_loader:
-            map = model.get_attention_maps(data)
-            maps.append(map[0].cpu().detach().numpy())
-        return res, test_outbeddings, maps, model.logits
-    else:
-        return res, test_outbeddings, model.logits
+    # _, _, test_outbeddings = model.get_outbeddings()
+    # if attn == 1:
+    #     maps = []
+    #     for data in test_loader:
+    #         map = model.get_attention_maps(data)
+    #         maps.append(map[0].cpu().detach().numpy())
+    #     return res, test_outbeddings, maps, model.logits
+    # else:
+    return res

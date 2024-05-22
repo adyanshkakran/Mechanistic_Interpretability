@@ -14,8 +14,8 @@ class BracketDataset(Dataset):
         
         self.X = data['sequence'].values
         self.stack_depth = data['stack_depth'].values
-        self.stack_depth = np.abs(self.stack_depth)
         self.Y = np.array([[0, 1] if int(y) > 0 else [1, 0] for y in self.stack_depth])
+        self.stack_depth = np.abs(self.stack_depth)
         
         self.max_len = max([len(seq) for seq in self.X])
         self.eos_index = np.array([len(seq) for seq in self.X])
@@ -26,7 +26,7 @@ class BracketDataset(Dataset):
         return np.array([self.encode_dict[c] for c in seq])
     
     def pad_sequence(self, seq):
-        return seq + '&' + '-' * (self.max_len - len(seq))
+        return seq + '-'
 
     def __len__(self):
         return len(self.X)
@@ -36,11 +36,9 @@ class BracketDataset(Dataset):
 
 def load_data(path):
     data = load_from_csv(path)
-    # take 70% of the data for training
-    # data = data.sample(frac=0.7).reset_index(drop=True)
     return BracketDataset(data)
 
-def get_loaders(data, batch_size=32, return_data=False, train_frac=0.6):
+def get_loaders(data, batch_size=64, return_data=False, train_frac=0.6):
     torch.manual_seed(0)
     
     bracket_size = len(data)
@@ -67,7 +65,6 @@ def remove_batch_dimension(outbeddings, stack_depths=[5, 15]):
     indices = res[0]
     
     print(indices, res, len(res), indices.shape)
-    
 
     outbeds = outbeds[indices]
     depths = depths[indices]
