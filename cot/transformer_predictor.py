@@ -241,19 +241,12 @@ class TransformerPredictor(L.LightningModule):
         x = self.input_net(x)
         if add_positional_encoding:
             x = self.positional_encoding(x)
-        
-        for _ in range(len(x[0]) - 2):
-            outbedding = self.transformer(x, mask=mask)
-            # only take the last element in the sequence
-            outbedding = outbedding[:, -1, :]
-            preds = torch.argmax(outbedding, dim=1)
-            if torch.all(preds == 2):
-                break
-            # append outbedding to x
-            x = torch.cat([x, outbedding], dim=1)
-        
+        mask = mask.unsqueeze(1)
+        mask = mask & mask.transpose(-1, -2)
+        mask = mask.unsqueeze(1).repeat(1, self.hparams.num_heads, 1, 1)
+        outbedding = self.transformer(x, mask=mask)
         x = self.output_net(outbedding)
-        return x
+        return x, outbedding
 
     @torch.no_grad()
     def get_attention_maps(self, data, mask=None, add_positional_encoding=True):
@@ -284,25 +277,15 @@ class TransformerPredictor(L.LightningModule):
     def calc_loss(self, batch, mode='train'):
         x, y = batch['x'], batch['y'].float()
         eos = batch['eos']
-        
-        for _ in range(len(x[0]) - 2):
-            y_hat = self(batch)
-            # only take the last element in the sequence
-            y_hat = y_hat[:, -1, :]
-            print(y_hat.shape)
-            preds = torch.argmax(y_hat, dim=2)
-            if torch.all(preds == 2):
-                break
-            # append y_hat to batch['x']
-            batch['x'] = torch.cat([batch['x'], y_hat], dim=1)
-            print(batch['x'].shape)
-        
-        # take the elements after the eos token in the sequence
-
-        
-                
+        mask = batch['mask']
+        batch['x'] = batch['x'].float()
+        y_hat, outbeds = self(batch, mask=mask)
+        y_hat = y_hat[torch.arange(y_hat.size(0)), eos]
+        # outbeds = outbeds[torch.arange(outbeds.size(0)), eos].cpu()
         loss = F.cross_entropy(y_hat, y)
-        accuracy = self.accuracy(F.softmax(y_hat), y)
+        # print(torch.argmax(F.softmax(y_hat), dim=1), torch.argmax(y, dim=1))
+        # print(torch.all())
+        accuracy = self.accuracy(F.softmax(y_hat, dim=1), y)
         return loss, accuracy
 
     def training_step(self, batch, batch_idx):
