@@ -291,22 +291,22 @@ class TransformerPredictor(L.LightningModule):
     def training_step(self, batch, batch_idx):
         loss, accuracy = self.calc_loss(batch, 'train')
         # self.train_outbeddings.append([outbeds, batch['sd']])
-        self.log('train_loss', loss)
-        self.log('train_acc', accuracy, on_epoch=True)
+        self.log('train_loss', loss, sync_dist=True)
+        self.log('train_acc', accuracy, on_epoch=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss, accuracy = self.calc_loss(batch, 'val')
         # self.val_outbeddings.append([outbeds, batch['sd']])
-        self.log('val_loss', loss)
-        self.log('val_acc', accuracy, on_epoch=True)
+        self.log('val_loss', loss, sync_dist=True)
+        self.log('val_acc', accuracy, on_epoch=True, sync_dist=True)
         return loss
 
     def test_step(self, batch, batch_idx):
         loss, accuracy = self.calc_loss(batch, 'test')
         # self.test_outbeddings.append([outbeds, batch['sd']])
-        self.log('test_loss', loss)
-        self.log('test_acc', accuracy, on_epoch=True)
+        self.log('test_loss', loss, sync_dist=True)
+        self.log('test_acc', accuracy, on_epoch=True, sync_dist=True)
         # self.logits.append(logits)
         return loss
     
