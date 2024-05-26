@@ -37,7 +37,6 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--transformer_epochs', type=int, default=10)
     parser.add_argument('--data-path', type=str, default='brackets.csv')
-    parser.add_argument('--stack_depths', type=parse_list, default=[5, 15])
 
     args = parser.parse_args()
     
@@ -60,28 +59,10 @@ if __name__ == '__main__':
     )
     trainer = L.Trainer(max_epochs=args.transformer_epochs, devices=1)
 
-    res, model, trainer, train_outbeddings, val_outbeddings = train(model, trainer, train_loader, val_loader)
+    res, model, trainer, _, _ = train(model, trainer, train_loader, val_loader)
 
-    res, _ = test(model, trainer, train_loader)
+    res, _, _ = test(model, trainer, train_loader)
     logger.log(f'Training results: {res}')
     
-    res, test_outbeddings = test(model, trainer, test_loader)
+    res, _, _ = test(model, trainer, test_loader)
     logger.log(f'Test results: {res}')
-
-    X_probe_train, y_probe_train = get_probe_data(train_outbeddings)
-    X_probe_val, y_probe_val = get_probe_data(val_outbeddings)
-    X_probe_test, y_probe_test = get_probe_data(test_outbeddings)
-
-    train_dataset = make_dataset(X_probe_train, y_probe_train)
-    val_dataset = make_dataset(X_probe_val, y_probe_val)
-    test_dataset = make_dataset(X_probe_test, y_probe_test)
-
-    train_probe_loader, val_probe_loader, test_probe_loader = get_probe_loaders(train_dataset, val_dataset, test_dataset, batch_size=args.batch_size)
-
-    res = probe_all_models(X_probe_train.cpu().detach().numpy(), y_probe_train.cpu().detach().numpy(), X_probe_test.cpu().detach().numpy(), y_probe_test.cpu().detach().numpy())
-    logger.log(f'Probe results:')
-    for r in res:
-        logger.log(r['model'])
-        logger.log(r['cr'])
-        logger.log('|==============================|')
-
