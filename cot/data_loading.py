@@ -4,36 +4,23 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
-def load_from_csv(path):
-    return pd.read_csv(path)
-
 class BracketDataset(Dataset):
-    def __init__(self, data=None, batch_size=64):
-        self.batch_size = batch_size
+    def __init__(self, data=None):
+        self.data = []
+        self.ctoi = {c: i for i, c in enumerate('()&YNP')}
         
-        self.input_dict = {'(': [1, 0, 0], ')': [0, 1, 0], '&': [0, 0, 1], '-': [0, 0, 0]}
-        self.output_dict = {'(': [1, 0, 0, 0, 0], ')': [0, 1, 0, 0, 0], '&': [0, 0, 1, 0, 0], 'y': [0, 0, 0, 1, 0], 'n': [0, 0, 0, 0, 1]}
+        max_len = 0
         
-        self.X = []
-        self.Y = []
-        self.max_len = 0
-        for x in data['sequence'].values:
-            x_cpy = x + '&'
+        for i, row in tqdm(data.iterrows(), total=len(data)):
+            x = row['sequence']
             out = self.generate_output(x)
-            self.X.append(x_cpy)
-            self.Y.append(out[0])
-            for i in range(len(out) - 1):
-                x_cpy += out[i]
-                self.X.append(x_cpy)
-                self.Y.append(out[i+1])
-            self.max_len = max(self.max_len, len(x_cpy))
-        print("Max length of sequence: ", self.max_len)
-        
-        self.X_encoded = np.array([self.encode_sequence(self.pad_sequence(seq, self.max_len)) for seq in tqdm(self.X)])
-        self.attention_mask = np.array([[1 if c[0]+c[1]+c[2] == 0 else 0 for c in seq] for seq in tqdm(self.X_encoded)])
-        
-        self.Y_encoded = np.array([self.output_dict[c] for c in tqdm(self.Y)])
-        self.eos_index = np.array([self.max_len - 1] * len(self.X_encoded))
+            self.data.append([self.ctoi[c] for c in out])
+            max_len = max(max_len, len(out))
+            
+        for i in range(len(self.data)):
+            self.data[i] += [self.ctoi['P']] * (max_len - len(self.data[i]))
+            
+        self.data = torch.tensor(self.data, dtype=torch.long)
         
     def step(self, seq):
         open_bracket = seq[0] == '('
@@ -55,14 +42,15 @@ class BracketDataset(Dataset):
         while True:
             next = self.step(seq)
             if next == seq:
-                out += '&n'
+                out += '&N'
                 break
             if next == '':
-                out += '&y'
+                out += '&Y'
                 break
             out += ('&' if out != "" else "") + next
             seq = next
         return out
+        
         
     def encode_sequence(self, seq):
         return np.array([self.input_dict[c] for c in seq])
@@ -70,22 +58,29 @@ class BracketDataset(Dataset):
     def pad_sequence(self, seq, max_len):
         return seq + (max_len - len(seq)) * '-'
 
+
+    def encode_sequence(self, seq):
+        return np.array([self.input_dict[c] for c in seq])
+    
+    def pad_sequence(self, seq, max_len):
+        return seq + (max_len - len(seq)) * '-'
+
     def __len__(self):
-        return len(self.X)
+        return self.data.size(0)
 
     def __getitem__(self, idx):
-        return {'x': self.X_encoded[idx], 'y': self.Y_encoded[idx], 'eos': self.eos_index[idx], 'mask': self.attention_mask[idx]}
+        return self.data[idx, :-1], self.data[idx, 1:]
 
 def load_data(path):
-    data = load_from_csv(path)
+    data = pd.read_csv(path)
     return BracketDataset(data)
 
-def get_loaders(data, batch_size=64, return_data=False, train_frac=0.6):
+def get_loaders(data, batch_size=64, return_data=False, train_frac=0.7, val_frac=0.1):
     torch.manual_seed(0)
     
     bracket_size = len(data)
     train_size = int(train_frac * bracket_size)
-    val_size = int(0.1 * bracket_size)
+    val_size = int(val_frac * bracket_size)
     test_size = bracket_size - train_size - val_size
 
     train_bracket, val_bracket, test_bracket = torch.utils.data.random_split(data, [train_size, val_size, test_size])
@@ -98,45 +93,3 @@ def get_loaders(data, batch_size=64, return_data=False, train_frac=0.6):
         return train_loader, val_loader, test_loader, train_bracket, val_bracket, test_bracket
     
     return train_loader, val_loader, test_loader
-
-def remove_batch_dimension(outbeddings, stack_depths=[5, 15]):
-    outbeds = torch.cat([x[0] for x in outbeddings], dim=0)
-    depths = torch.cat([x[1] for x in outbeddings])
-
-    res = torch.where(torch.isin(depths, torch.tensor(stack_depths)))
-    indices = res[0]
-    
-    print(indices, res, len(res), indices.shape)
-
-    outbeds = outbeds[indices]
-    depths = depths[indices]
-
-    return outbeds, depths
-
-def get_probe_data(outbeddings, stack_depths=[5, 15]):
-    outbeddings = [(x.cpu(), y.cpu()) for x, y in outbeddings]
-    outbeds, depths = remove_batch_dimension(outbeddings, stack_depths=stack_depths)
-
-    return outbeds, depths
-
-def make_dataset(X,y):
-    return TensorDataset(X.cpu(), y.cpu())
-
-def get_probe_loaders(train_data, val_data, test_data, batch_size=64):
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=batch_size)
-    test_loader = DataLoader(test_data, batch_size=batch_size)
-    
-    return train_loader, val_loader, test_loader
-
-def get_stack_depths(data, stack_depths=[5, 15]):    
-    stack_data = torch.where(torch.isin(data, torch.tensor(stack_depths)))[0]
-
-    loader = DataLoader(stack_data, batch_size=64)
-    
-    return loader
-
-
-if __name__ == '__main__':
-    data = load_data('brackets.csv')
-    print(data[0])
