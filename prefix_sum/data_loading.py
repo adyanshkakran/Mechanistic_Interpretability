@@ -23,35 +23,15 @@ class BracketDataset(Dataset):
             
         self.data = torch.tensor(self.data, dtype=torch.long)
         
-    def step(self, seq):
-        out = ""
-        done = False
-        seen_open = False
-        for i in seq:
-            if i == '(':
-                out += '('
-                seen_open = True
-            elif i == ')':
-                if not done and seen_open:
-                    done = True
-                    out = out[:-1]
-                    continue
-                out += ')'
-        return out
-    
     def generate_output(self, seq):
-        out = seq
-        while True:
-            next = self.step(seq)
-            if next == seq:
-                out += '&N'
-                break
-            if next == '':
-                out += '&Y'
-                break
-            out += ('&' if out != "" else "") + next
-            seq = next
-        return out
+        out = seq + ':0&'
+        count = 0
+        for i in range(len(seq)):
+            count += 1 if seq[i] == '(' else -1
+            out += seq[i+1:] + ':' + (str(count) if count >= 0 else '#') + '&'
+            if count == -1:
+                return out + 'N'
+        return out + ('Y' if count == 0 else 'N')
 
     def __len__(self):
         return self.data.size(0)

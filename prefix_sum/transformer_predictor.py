@@ -91,7 +91,7 @@ class TransformerLM(nn.Module):
         # src_ : [bz, seq]
 
         # We only work with src_ from now on. `src` is the original input.
-        for i in range(2000):
+        for i in range(3000):
             outputs = self(src_)
             # [bz, seq, ntoken]
             if not argmax:

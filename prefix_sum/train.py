@@ -14,7 +14,7 @@ def get_name_from_config(config):
 
 dataset = load_data('../Data/train-CoT-Big.csv')
 
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 train_loader, val_loader, test_loader = get_loaders(dataset, batch_size=BATCH_SIZE)
 
 config = {
@@ -25,7 +25,7 @@ config = {
 }
 
 model = TransformerPredictor(
-    input_dim=6,
+    input_dim=18,
     model_dim=config['model_dim'],
     num_heads=config['num_heads'],
     num_layers=config['num_layers'],
