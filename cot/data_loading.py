@@ -11,34 +11,35 @@ class BracketDataset(Dataset):
         
         max_len = 0
         
-        for i, row in tqdm(data.iterrows(), total=len(data)):
+        for i, row in tqdm(data.iterrows(), total=len(data), desc='Generating sequences'):
             x = row['sequence']
             out = self.generate_output(x)
             self.data.append([self.ctoi[c] for c in out])
             max_len = max(max_len, len(out))
             
-        for i in range(len(self.data)):
+        for i in tqdm(range(len(self.data)), desc='Padding sequences'):
             self.data[i] += [self.ctoi['P']] * (max_len - len(self.data[i]))
             
         self.data = torch.tensor(self.data, dtype=torch.long)
         
     def step(self, seq):
-        open_bracket = seq[0] == '('
         out = ""
-        for c in seq:
-            if c == '(':
-                open_bracket = True
-            elif c == ')':
-                if open_bracket:
-                    open_bracket = False
+        done = False
+        seen_open = False
+        for i in seq:
+            if i == '(':
+                out += '('
+                seen_open = True
+            elif i == ')':
+                if not done and seen_open:
+                    done = True
                     out = out[:-1]
                     continue
-                open_bracket = False
-            out += c
+                out += ')'
         return out
     
     def generate_output(self, seq):
-        out = ""
+        out = seq
         while True:
             next = self.step(seq)
             if next == seq:

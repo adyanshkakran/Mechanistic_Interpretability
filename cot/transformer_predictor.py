@@ -89,7 +89,7 @@ class TransformerLM(nn.Module):
         # src_ : [bz, seq]
 
         # We only work with src_ from now on. `src` is the original input.
-        for i in range(100):
+        for i in range(2000):
             outputs = self(src_)
             # [bz, seq, ntoken]
             if not argmax:
@@ -121,7 +121,7 @@ class TransformerPredictor(L.LightningModule):
         num_heads,
         num_layers,
         lr,
-        dropout=0.0,
+        dropout=0.0
     ):
         """TransformerPredictor.
 

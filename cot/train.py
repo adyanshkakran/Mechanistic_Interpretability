@@ -10,31 +10,32 @@ def get_name_from_config(config):
     Convert a config dict to the string under which the corresponding
     models and datasets will be saved.
     """
-    return f'd_model={config["model_dim"]}-nhead={config["num_heads"]}-nlayers={config["num_layers"]}'
+    return f'retrain-d_model={config["model_dim"]}-nhead={config["num_heads"]}-nlayers={config["num_layers"]}'
 
-dataset = load_data('../Data/train-CoT.csv')
+dataset = load_data('../Data/train-CoT-Big.csv')
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 train_loader, val_loader, test_loader = get_loaders(dataset, batch_size=BATCH_SIZE)
 
 config = {
-    'model_dim': 256,
+    'model_dim': 128,
     'num_heads': 8,
     'num_layers': 3,
     'lr': 1e-3
 }
 
-model = TransformerPredictor(
-    input_dim=6,
-    model_dim=config['model_dim'],
-    num_heads=config['num_heads'],
-    num_layers=config['num_layers'],
-    lr=config['lr'],
-)
+# model = TransformerPredictor(
+#     input_dim=6,
+#     model_dim=config['model_dim'],
+#     num_heads=config['num_heads'],
+#     num_layers=config['num_layers'],
+#     lr=config['lr'],
+# )
+model = TransformerPredictor.load_from_checkpoint('models/d_model=128-nhead=8-nlayers=3.ckpt')
 name = get_name_from_config(config)
-early_stopping =  EarlyStopping(monitor='val_loss', patience=3)
-model_checkpoint = ModelCheckpoint(monitor='val_loss', save_top_k=1, dirpath='models/', filename=name)
-trainer = L.Trainer(max_epochs=100, devices=1, callbacks=[early_stopping, model_checkpoint])
+early_stopping =  EarlyStopping(monitor='val_loss', patience=2)
+model_checkpoint = ModelCheckpoint(monitor='val_loss', save_top_k=2, dirpath='models/', filename=name)
+trainer = L.Trainer(max_epochs=20, devices=1, callbacks=[early_stopping, model_checkpoint])
 
 trainer.fit(model, train_loader, val_loader)
 trainer.test(model, test_loader)

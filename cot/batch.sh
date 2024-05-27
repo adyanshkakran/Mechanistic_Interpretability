@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -n 10
+#SBATCH --ntasks-per-node 10
 #SBATCH -w gnode075
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=2G
@@ -10,4 +10,4 @@ source /home2/adyansh/miniconda3/bin/activate
 
 conda activate /home2/adyansh/dinner_pool/rsai/
 
-srun python3 /home2/adyansh/dinner_pool/Mechanistic_Interpretability/cot/train.py
+python3 /home2/adyansh/dinner_pool/Mechanistic_Interpretability/cot/train.py
