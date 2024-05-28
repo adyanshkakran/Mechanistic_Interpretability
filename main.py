@@ -119,13 +119,15 @@ if __name__ == "__main__":
     )
 
     trainer = L.Trainer(max_epochs=args.transformer_epochs, devices=1)
+    model_name = "original_tasks_model"
+    
     # check for saved model
     if os.path.exists(
-        f"models/original_tasks_model_{args.length}_{args.num_layers}_{args.num_heads}.pt"
+        f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt"
     ):
         model.load_state_dict(
             torch.load(
-                f"models/original_tasks_model_{args.length}_{args.num_layers}_{args.num_heads}.pt"
+                f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt"
             )
         )
     else:
@@ -135,10 +137,10 @@ if __name__ == "__main__":
         # save the model
         torch.save(
             model.state_dict(),
-            f"models/original_tasks_model_{args.length}_{args.num_layers}_{args.num_heads}.pt",
+            f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt",
         )
 
-    res, _, _ = test(model, trainer, train_loader)
+    res, _, _ = test(model, trainer, test_loader)
     logger.log(f"Training results: {res}")
 
     testing_data_df = load_from_csv(args.test_data_path)

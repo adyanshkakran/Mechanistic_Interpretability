@@ -26,6 +26,7 @@ Y = dataset['stack_depth'].apply(lambda x: 1 if x > 0 else 0).tolist()
 # Y = torch.tensor(Y, dtype=torch.long)
 
 preds = []
+outputs = []
 BATCH_SIZE = 32
 for i in tqdm(range(0, len(X), BATCH_SIZE)):
     x = X[i:i+BATCH_SIZE]
@@ -47,6 +48,7 @@ for i in tqdm(range(0, len(X), BATCH_SIZE)):
             preds.append(0)
         else:
             preds.append(-1)
+        outputs.append(out[i][:eos[i]] if eos[i] < len(out[i]) else out[i])
 
 # calculate accuracy between preds and Y
 correct = 0
@@ -61,6 +63,6 @@ print(f'Accuracy: {correct/total}')
 c = Counter(preds)
 print(c)
 
-df = pd.DataFrame({'sequence': dataset['sequence'], 'label': Y, 'prediction': preds})
+df = pd.DataFrame({'sequence': dataset['sequence'], 'label': Y, 'prediction': preds, 'output': outputs})
 
 df.to_csv('outputs/testing.csv', index=False)

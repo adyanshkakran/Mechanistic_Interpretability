@@ -199,7 +199,7 @@ class TransformerPredictor(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self._create_model()
-        self.accuracy = torchmetrics.classification.Accuracy(task="binary")
+        self.accuracy = torchmetrics.classification.BinaryAccuracy()
         self.train_outbeddings = []
         self.val_outbeddings = []
         self.test_outbeddings = []
@@ -279,11 +279,14 @@ class TransformerPredictor(L.LightningModule):
         y_hat = y_hat[torch.arange(y_hat.size(0)), eos]
         outbeds = outbeds[torch.arange(outbeds.size(0)), eos].cpu()
         loss = F.cross_entropy(y_hat, y)
-        accuracy = self.accuracy(F.softmax(y_hat), y)
+        accuracy = self.accuracy(F.softmax(y_hat, dim=1), y)
         return loss, accuracy, outbeds, y_hat
 
     def training_step(self, batch, batch_idx):
-        loss, accuracy, outbeds, _ = self.calc_loss(batch, 'train')
+        loss, accuracy, outbeds, logits = self.calc_loss(batch, 'train')
+        # if batch_idx == 0:
+        #     print("y_hat", logits[0])
+        #     print("y", batch['y'][0])
         self.train_outbeddings.append([outbeds, batch['sd']])
         self.log('train_loss', loss)
         self.log('train_acc', accuracy, on_epoch=True)

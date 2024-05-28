@@ -24,7 +24,7 @@ class BracketDataset(Dataset):
             self.X = data["sequence"].values
             self.stack_depth = data["stack_depth"].values
             self.Y = np.array(
-                [[0, 1] if int(y) > 0 else [1, 0] for y in self.stack_depth]
+                [[1, 0] if int(y) > 0 else [0, 1] for y in self.stack_depth]
             )
             self.stack_depth = np.abs(self.stack_depth)
 
@@ -83,7 +83,7 @@ def get_loaders(data, batch_size=32, return_data=False, train_frac=0.6):
     train_loader = DataLoader(
         train_bracket,
         batch_size=batch_size,
-        shuffle=True,
+        # shuffle=True,
         num_workers=torch.get_num_threads(),
     )
     val_loader = DataLoader(

@@ -103,7 +103,7 @@ class TransformerLM(nn.Module):
             src_ = torch.concat([src_, preds], dim=1)
             
             for i in range(src_.shape[0]):
-                if not done[i] and (preds[i] == 3 or preds[i] == 4):
+                if not done[i] and (preds[i] == 15 or preds[i] == 16):
                     done[i] = True
                     output_eos[i] = src_.shape[1] - 1
                 
