@@ -12,6 +12,7 @@ def run(args):
         '--max_iters', str(args.max_iters),
         '--batch_size', str(args.batch_size),
         '--transformer_epochs', str(args.transformer_epochs),
+        '--data-path', 
         # '--stack_depths', ','.join(map(str, args.stack_depths))
     ])
 
@@ -28,11 +29,9 @@ class Args:
         # self.stack_depths = stack_depths
 
 if __name__ == '__main__':
-    # layers = [1, 2]
-    # num_heads = [2, 4]
-    
-    layers = [1]
-    num_heads = [4]
+    layers = [1, 2, 3, 4]
+    num_heads = [2, 4, 8]
+
     
     for layer in layers:
         for head in num_heads:
