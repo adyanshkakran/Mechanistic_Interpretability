@@ -83,7 +83,7 @@ def get_loaders(data, batch_size=32, return_data=False, train_frac=0.6):
     train_loader = DataLoader(
         train_bracket,
         batch_size=batch_size,
-        # shuffle=True,
+        shuffle=True,
         num_workers=torch.get_num_threads(),
     )
     val_loader = DataLoader(

@@ -284,9 +284,6 @@ class TransformerPredictor(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, accuracy, outbeds, logits = self.calc_loss(batch, 'train')
-        # if batch_idx == 0:
-        #     print("y_hat", logits[0])
-        #     print("y", batch['y'][0])
         self.train_outbeddings.append([outbeds, batch['sd']])
         self.log('train_loss', loss)
         self.log('train_acc', accuracy, on_epoch=True)
