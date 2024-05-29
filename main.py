@@ -80,8 +80,8 @@ def get_counts(loader: DataLoader, counts=[1, 2, 3]):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_dim", type=int, default=128)
-    parser.add_argument("--num_heads", type=int, default=4)
-    parser.add_argument("--num_layers", type=int, default=2)
+    parser.add_argument("--num_heads", type=int, default=2)
+    parser.add_argument("--num_layers", type=int, default=1)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--max_iters", type=int, default=1000)
@@ -101,12 +101,6 @@ if __name__ == "__main__":
     logger = Logger()
     logger.log(f"Arguments: {args}")
 
-    dataset = load_data(args.data_path)
-
-    train_loader, val_loader, test_loader = get_loaders(
-        dataset, batch_size=args.batch_size
-    )
-
     model = TransformerPredictor(
         input_dim=4,
         model_dim=args.model_dim,
@@ -120,7 +114,7 @@ if __name__ == "__main__":
 
     trainer = L.Trainer(max_epochs=args.transformer_epochs, devices=1)
     model_name = "original_tasks_model"
-    
+
     # check for saved model
     if os.path.exists(
         f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt"
@@ -131,6 +125,11 @@ if __name__ == "__main__":
             )
         )
     else:
+        dataset = load_data(args.data_path)
+
+        train_loader, val_loader, test_loader = get_loaders(
+            dataset, batch_size=args.batch_size
+        )
 
         res, model, trainer, _, _ = train(model, trainer, train_loader, val_loader)
 
@@ -140,8 +139,8 @@ if __name__ == "__main__":
             f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt",
         )
 
-    res, _, _ = test(model, trainer, test_loader)
-    logger.log(f"Training results: {res}")
+        res, _, _ = test(model, trainer, test_loader)
+        logger.log(f"Training results: {res}")
 
     testing_data_df = load_from_csv(args.test_data_path)
     testing_data: BracketDataset = load_data(args.test_data_path)
