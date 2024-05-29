@@ -153,22 +153,32 @@ class TransformerPredictor(L.LightningModule):
         return optimizer
 
     def training_step(self, batch: torch.Tensor, batch_idx: int):
-        src, tgt = batch
+        src, tgt, eos = batch
         output = self(src)
-        loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
+        mask = (torch.arange(tgt.size(1)).unsqueeze(0).cuda() < eos.unsqueeze(1)).view(-1)
+        out = output.view(-1, output.size(-1))[mask]
+        target = tgt.view(-1)[mask]
+        loss = self.criterion(out, target)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int):
-        src, tgt = batch
+        src, tgt, eos = batch
         output = self(src)
-        loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
+        # print(src.device, tgt.device, eos.device, output.device, torch.arange(tgt.size(1)).device, eos.unsqueeze(1).device)
+        mask = (torch.arange(tgt.size(1)).unsqueeze(0).cuda() < eos.unsqueeze(1)).view(-1)
+        out = output.view(-1, output.size(-1))[mask]
+        target = tgt.view(-1)[mask]
+        loss = self.criterion(out, target)
         self.log("val_loss", loss)
         return loss
 
     def test_step(self, batch: torch.Tensor, batch_idx: int):
-        src, tgt = batch
+        src, tgt, eos = batch
         output = self(src)
-        loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
+        mask = (torch.arange(tgt.size(1)).unsqueeze(0).cuda() < eos.unsqueeze(1)).view(-1)
+        out = output.view(-1, output.size(-1))[mask]
+        target = tgt.view(-1)[mask]
+        loss = self.criterion(out, target)
         self.log("test_loss", loss)
         return loss

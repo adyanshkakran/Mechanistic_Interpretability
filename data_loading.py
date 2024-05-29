@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import numpy as np
 import pandas as pd
+from tqdm.auto import tqdm
 
 
 def load_from_csv(path):
@@ -20,22 +21,36 @@ class BracketDataset(Dataset):
                 "&": [0, 0, 1, 0],
                 "-": [0, 0, 0, 1],
             }
+            ctoi = {c: i for i, c in enumerate("()P")}
 
-            self.X = data["sequence"].values
+            max_len = 0
+            self.X = []
+            self.eos = []
+            for i, row in tqdm(data.iterrows(), total=len(data), desc='Generating sequences'):
+                x = row['sequence']
+                self.X.append([ctoi[c] for c in x])
+                self.eos.append(len(x)-1)
+                max_len = max(max_len, len(x))
+                
+            for i in tqdm(range(len(self.X)), desc='Padding sequences'):
+                self.X[i] += [ctoi['P']] * (max_len - len(self.X[i]))
+            
+            self.X = torch.tensor(self.X, dtype=torch.long)
+            
             self.stack_depth = data["stack_depth"].values
             self.Y = np.array(
-                [[1, 0] if int(y) > 0 else [0, 1] for y in self.stack_depth]
+                [1 if int(y) > 0 else 0 for y in self.stack_depth]
             )
-            self.stack_depth = np.abs(self.stack_depth)
+            # self.stack_depth = np.abs(self.stack_depth)
 
-            self.counts = np.abs(data["count"].values)
+            # self.counts = np.abs(data["count"].values)
 
-            self.max_len = max([len(seq) for seq in self.X])
-            self.eos_index = np.array([len(seq) for seq in self.X])
+            # self.max_len = max([len(seq) for seq in self.X])
+            # self.eos_index = np.array([len(seq) for seq in self.X])
 
-            self.X_encoded = np.array(
-                [self.encode_sequence(self.pad_sequence(seq)) for seq in self.X]
-            )
+            # self.X_encoded = np.array(
+            #     [self.encode_sequence(self.pad_sequence(seq)) for seq in self.X]
+            # )
             self.list = None
         else:
             self.list = list
@@ -49,16 +64,18 @@ class BracketDataset(Dataset):
     def __len__(self):
         return len(self.X)
 
-    def __getitem__(self, idx):
-        if self.list:
-            return self.list[idx]
-        return {
-            "x": self.X_encoded[idx],
-            "y": self.Y[idx],
-            "eos": self.eos_index[idx],
-            "sd": self.stack_depth[idx],
-            "count": self.counts[idx],
-        }
+    # def __getitem__(self, idx):
+    #     if self.list:
+    #         return self.list[idx]
+    #     return {
+    #         "x": self.X_encoded[idx],
+    #         "y": self.Y[idx],
+    #         "eos": self.eos_index[idx],
+    #         "sd": self.stack_depth[idx],
+    #         "count": self.counts[idx],
+    #     }
+    def __getitem__(self, index):
+        return self.X[index], self.Y[index], self.eos[index]
 
 
 def load_data(path):

@@ -7,7 +7,8 @@ from tqdm.auto import tqdm
 class BracketDataset(Dataset):
     def __init__(self, data=None):
         self.data = []
-        vocab = '()&:#0123456789YNP'
+        self.eos = []
+        vocab = '()&YNP'
         self.ctoi = {c: i for i, c in enumerate(vocab)}
         
         max_len = 0
@@ -16,12 +17,14 @@ class BracketDataset(Dataset):
             x = row['sequence']
             out = self.generate_output(x)
             self.data.append([self.ctoi[c] for c in out])
+            self.eos.append(len(out)-1)
             max_len = max(max_len, len(out))
             
         for i in tqdm(range(len(self.data)), desc='Padding sequences'):
             self.data[i] += [self.ctoi['P']] * (max_len - len(self.data[i]))
             
         self.data = torch.tensor(self.data, dtype=torch.long)
+        self.eos = torch.tensor(self.eos, dtype=torch.long)
         
     def step(self, seq):
         out = ""
@@ -57,7 +60,7 @@ class BracketDataset(Dataset):
         return self.data.size(0)
 
     def __getitem__(self, idx):
-        return self.data[idx, :-1], self.data[idx, 1:]
+        return self.data[idx, :-1], self.data[idx, 1:], self.eos[idx]
 
 def load_data(path):
     data = pd.read_csv(path)

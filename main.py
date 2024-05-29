@@ -90,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("--data-path", type=str, default="brackets.csv")
     parser.add_argument("--test-data-path", type=str, default="brackets.csv")
     parser.add_argument(
-        "--type", type=str, default="stack_depth", choices=["stack_depth", "count"]
+        "--type", type=str, default="", choices=["stack_depth", "count"]
     )
     parser.add_argument(
         "--length", type=int, default=512, help="Length of the input sequence"
@@ -102,18 +102,19 @@ if __name__ == "__main__":
     logger.log(f"Arguments: {args}")
 
     model = TransformerPredictor(
-        input_dim=4,
+        input_dim=3,
+        # output_dim=2,
         model_dim=args.model_dim,
         num_classes=2,
         num_heads=args.num_heads,
         num_layers=args.num_layers,
         lr=args.lr,
-        warmup=args.warmup,
-        max_iters=args.max_iters,
+        # warmup=args.warmup,
+        # max_iters=args.max_iters,
     )
 
     trainer = L.Trainer(max_epochs=args.transformer_epochs, devices=1)
-    model_name = "original_tasks_model"
+    model_name = "new_task"
 
     # check for saved model
     if os.path.exists(
@@ -131,7 +132,7 @@ if __name__ == "__main__":
             dataset, batch_size=args.batch_size
         )
 
-        res, model, trainer, _, _ = train(model, trainer, train_loader, val_loader)
+        res, model, trainer = train(model, trainer, train_loader, val_loader)
 
         # save the model
         torch.save(
@@ -139,7 +140,7 @@ if __name__ == "__main__":
             f"models/{model_name}_{args.length}_{args.num_layers}_{args.num_heads}.pt",
         )
 
-        res, _, _ = test(model, trainer, test_loader)
+        res = test(model, trainer, test_loader)
         logger.log(f"Training results: {res}")
 
     testing_data_df = load_from_csv(args.test_data_path)
@@ -173,4 +174,5 @@ if __name__ == "__main__":
             logger.log(f"Count {count}, Support: {len_count}, Accuracy: {res}")
 
     else:
-        raise ValueError(f"Invalid type {args.type}")
+        res = test(model, trainer, testing_data_loader)
+        logger.log(f"Testing results: {res}")
