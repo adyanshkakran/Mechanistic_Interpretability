@@ -75,30 +75,34 @@ def generate_balanced_brackets(n):
     return sequence
 
 if __name__=="__main__":
-    brackets = []
-    for i in tqdm(range(10000)):
+    balanced_brackets = []
+    unbalanced_brackets = []
+    for i in tqdm(range(2000)):
         # select a random length for the bracket sequence between 2 and 50
-        n = random.randint(2, 50)
+        n = random.randint(51, 100)
         # generate a balanced bracket sequence
         balanced = generate_balanced_brackets(n)
         # generate an unbalanced bracket sequence
         unbalanced = generate_unbalanced_brackets(n)
         
         # add the balanced and unbalanced sequences to the dictionary
-        brackets.append({
+        balanced_brackets.append({
             'sequence': balanced,
             'stack_depth': is_balanced(balanced)[0],
             'count': is_balanced(balanced)[1],
         })
 
-        brackets.append({
+        unbalanced_brackets.append({
             'sequence': unbalanced,
             'stack_depth': is_balanced(unbalanced)[0],
             'count': is_balanced(unbalanced)[1],
         })
     
     # export into csv file
-    df = pd.DataFrame(brackets)
-    df.to_csv('Data/new_new_brackets.csv', index=False)
+    df = pd.DataFrame(balanced_brackets)
+    df.to_csv('Data/new_new_balanced_brackets.csv', index=False)
+    
+    df = pd.DataFrame(unbalanced_brackets)
+    df.to_csv('Data/new_new_unbalanced_brackets.csv', index=False)
         
         
