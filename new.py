@@ -77,9 +77,12 @@ def generate_balanced_brackets(n):
 if __name__=="__main__":
     balanced_brackets = []
     unbalanced_brackets = []
-    for i in tqdm(range(2000)):
+    for i in tqdm(range(200)):
         # select a random length for the bracket sequence between 2 and 50
-        n = random.randint(51, 100)
+        n = random.randint(52, 100)
+        while n % 2 != 0:
+            n = random.randint(52, 100) # make sure the length is even
+        
         # generate a balanced bracket sequence
         balanced = generate_balanced_brackets(n)
         # generate an unbalanced bracket sequence
