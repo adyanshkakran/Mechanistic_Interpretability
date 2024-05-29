@@ -75,37 +75,79 @@ def generate_balanced_brackets(n):
     return sequence
 
 if __name__=="__main__":
-    balanced_brackets = []
-    unbalanced_brackets = []
-    for i in tqdm(range(200)):
+    # balanced_brackets =[]
+    # unbalanced_brackets =[]
+    
+    # balanced_seqs = set()
+    # unbalanced_seqs = set()
+    
+    brackets = []
+    seqs = set()
+    
+    count = 0
+    while count < 200:
         # select a random length for the bracket sequence between 2 and 50
-        n = random.randint(52, 100)
+        n = random.randint(2, 50)
         while n % 2 != 0:
-            n = random.randint(52, 100) # make sure the length is even
+            n = random.randint(2, 50) # make sure the length is even
         
         # generate a balanced bracket sequence
         balanced = generate_balanced_brackets(n)
         # generate an unbalanced bracket sequence
         unbalanced = generate_unbalanced_brackets(n)
         
+        # while balanced in balanced_seqs:
+        #     balanced = generate_balanced_brackets(n)
+        
+        # while unbalanced in unbalanced_seqs:
+        #     unbalanced = generate_unbalanced_brackets(n)
+        
+        if balanced in seqs:
+            continue
+        if unbalanced in seqs:
+            continue
+            
+        seqs.add(balanced)
+        seqs.add(unbalanced)
+        
         # add the balanced and unbalanced sequences to the dictionary
-        balanced_brackets.append({
+        # balanced_brackets.append({
+        #     'sequence': balanced,
+        #     'stack_depth': is_balanced(balanced)[0],
+        #     'count': is_balanced(balanced)[1],
+        # })
+
+        # unbalanced_brackets.append({
+        #     'sequence': unbalanced,
+        #     'stack_depth': is_balanced(unbalanced)[0],
+        #     'count': is_balanced(unbalanced)[1],
+        # })
+        
+        brackets.append({
             'sequence': balanced,
             'stack_depth': is_balanced(balanced)[0],
             'count': is_balanced(balanced)[1],
         })
-
-        unbalanced_brackets.append({
+        
+        brackets.append({
             'sequence': unbalanced,
             'stack_depth': is_balanced(unbalanced)[0],
             'count': is_balanced(unbalanced)[1],
         })
+        
+        count += 1
+        print(count, end='\r')
+        
+        # balanced_seqs.add(balanced)
+        # unbalanced_seqs.add(unbalanced)
     
     # export into csv file
-    df = pd.DataFrame(balanced_brackets)
-    df.to_csv('Data/new_new_balanced_brackets.csv', index=False)
+    # df = pd.DataFrame(balanced_brackets)
+    # df.to_csv('Data/new_new_balanced_brackets.csv', index=False)
     
-    df = pd.DataFrame(unbalanced_brackets)
-    df.to_csv('Data/new_new_unbalanced_brackets.csv', index=False)
-        
+    # df = pd.DataFrame(unbalanced_brackets)
+    # df.to_csv('Data/new_new_unbalanced_brackets.csv', index=False)
+    
+    df = pd.DataFrame(brackets)
+    df.to_csv('Data/new_new_brackets.csv', index=False)
         
